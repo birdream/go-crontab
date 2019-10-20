@@ -46,6 +46,7 @@ func main() {
 	}
 
 	kv.Put(context.TODO(), "/cron/jobs/job2", "{...}")
+	kv.Put(context.TODO(), "/cron/jobs/job3", "{.333.}")
 
 	if getResp, err = kv.Get(context.TODO(), "/cron/jobs", clientv3.WithPrefix()); err != nil {
 		fmt.Println(err)
