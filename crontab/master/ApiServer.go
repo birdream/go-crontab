@@ -56,6 +56,37 @@ ERR:
 	}
 }
 
+// 删除任务接口
+// POST /job/delete   name=job1
+func handleJobDelete(resp http.ResponseWriter, req *http.Request) {
+	var (
+		err    error
+		name   string
+		oldJob *common.Job
+		bytes  []byte
+	)
+
+	if err = req.ParseForm(); err != nil {
+		goto ERR
+	}
+
+	name = req.PostForm.Get("name")
+
+	if oldJob, err = G_jobMgr.DeleteJob(name); err != nil {
+		goto ERR
+	}
+
+	if bytes, err = common.BuildResponse(0, "success", oldJob); err == nil {
+		resp.Write(bytes)
+	}
+	return
+
+ERR:
+	if bytes, err = common.BuildResponse(-1, err.Error(), nil); err == nil {
+		resp.Write(bytes)
+	}
+}
+
 func InitApiServer() (err error) {
 	var (
 		mux        *http.ServeMux
@@ -65,6 +96,7 @@ func InitApiServer() (err error) {
 
 	mux = http.NewServeMux()
 	mux.HandleFunc("/job/save", handleJobSave)
+	mux.HandleFunc("/job/delete", handleJobDelete)
 
 	if listener, err = net.Listen("tcp", ":"+strconv.Itoa(G_config.ApiPort)); err != nil {
 		return
