@@ -1,6 +1,9 @@
 package master
 
 import (
+	"encoding/json"
+	"fmt"
+	"go-crontab/crontab/common"
 	"net"
 	"net/http"
 	"strconv"
@@ -16,8 +19,41 @@ var (
 	G_apiServer *ApiServer
 )
 
-func handleJobSave(w http.ResponseWriter, r *http.Request) {
+// 保存任务接口
+// POST job={"name": "job1", "command": "echo hello", "cronExpr": "* * * * *"}
+func handleJobSave(resp http.ResponseWriter, req *http.Request) {
+	var (
+		err     error
+		postJob string
+		job     common.Job
+		oldJob  *common.Job
+		bytes   []byte
+	)
 
+	if err = req.ParseForm(); err != nil {
+		goto ERR
+	}
+
+	postJob = req.PostForm.Get("job")
+	fmt.Println("postJob", postJob)
+	if err = json.Unmarshal([]byte(postJob), &job); err != nil {
+		fmt.Println("err", err)
+		goto ERR
+	}
+
+	if oldJob, err = G_jobMgr.SaveJob(&job); err != nil {
+		goto ERR
+	}
+
+	if bytes, err = common.BuildResponse(0, "success", oldJob); err == nil {
+		resp.Write(bytes)
+	}
+
+	return
+ERR:
+	if bytes, err = common.BuildResponse(-1, err.Error(), nil); err == nil {
+		resp.Write(bytes)
+	}
 }
 
 func InitApiServer() (err error) {
