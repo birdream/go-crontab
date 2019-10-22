@@ -6,6 +6,8 @@ import (
 	"go-crontab/crontab/common"
 	"time"
 
+	"go.etcd.io/etcd/mvcc/mvccpb"
+
 	"go.etcd.io/etcd/clientv3"
 )
 
@@ -19,6 +21,7 @@ var (
 	G_jobMgr *JobMgr
 )
 
+// InitJobMgr init method
 func InitJobMgr() (err error) {
 	var (
 		config clientv3.Config
@@ -48,6 +51,7 @@ func InitJobMgr() (err error) {
 	return
 }
 
+// SaveJob save job
 func (jobMgr *JobMgr) SaveJob(job *common.Job) (oldJob *common.Job, err error) {
 	var (
 		jobKey    string
@@ -76,6 +80,7 @@ func (jobMgr *JobMgr) SaveJob(job *common.Job) (oldJob *common.Job, err error) {
 	return
 }
 
+// DeleteJob delete job
 func (jobMgr *JobMgr) DeleteJob(jobName string) (oldJob *common.Job, err error) {
 	var (
 		jobKey    string
@@ -99,5 +104,33 @@ func (jobMgr *JobMgr) DeleteJob(jobName string) (oldJob *common.Job, err error) 
 		}
 		oldJob = &oldJobObj
 	}
+	return
+}
+
+func (jobMgr *JobMgr) ListJobs() (jobList []*common.Job, err error) {
+	var (
+		dirKey  string
+		getResp *clientv3.GetResponse
+		kvPair  *mvccpb.KeyValue
+		job     *common.Job
+	)
+
+	dirKey = common.JOB_SAVE_DIR
+
+	if getResp, err = jobMgr.kv.Get(context.TODO(), dirKey, clientv3.WithPrefix()); err != nil {
+		return
+	}
+
+	jobList = make([]*common.Job, 0)
+
+	for _, kvPair = range getResp.Kvs {
+		job = &common.Job{}
+		if err = json.Unmarshal(kvPair.Value, job); err != nil {
+			err = nil
+			continue
+		}
+		jobList = append(jobList, job)
+	}
+
 	return
 }

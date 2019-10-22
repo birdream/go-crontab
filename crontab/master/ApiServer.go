@@ -87,6 +87,27 @@ ERR:
 	}
 }
 
+func handleJobList(resp http.ResponseWriter, req *http.Request) {
+	var (
+		jobList []*common.Job
+		err     error
+		bytes   []byte
+	)
+
+	if jobList, err = G_jobMgr.ListJobs(); err != nil {
+		goto ERR
+	}
+
+	if bytes, err = common.BuildResponse(0, "success", jobList); err == nil {
+		resp.Write(bytes)
+	}
+	return
+
+ERR:
+	if bytes, err = common.BuildResponse(-1, err.Error(), nil); err == nil {
+		resp.Write(bytes)
+	}
+}
 func InitApiServer() (err error) {
 	var (
 		mux        *http.ServeMux
@@ -97,6 +118,7 @@ func InitApiServer() (err error) {
 	mux = http.NewServeMux()
 	mux.HandleFunc("/job/save", handleJobSave)
 	mux.HandleFunc("/job/delete", handleJobDelete)
+	mux.HandleFunc("/job/list", handleJobList)
 
 	if listener, err = net.Listen("tcp", ":"+strconv.Itoa(G_config.ApiPort)); err != nil {
 		return
