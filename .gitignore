@@ -12,3 +12,4 @@
 *.out
 
 crontab/master/main/master
+crontab/worker/main/worker
