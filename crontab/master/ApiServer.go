@@ -98,6 +98,7 @@ func handleJobList(resp http.ResponseWriter, req *http.Request) {
 		goto ERR
 	}
 
+	// fmt.Println("jobList: ", jobList[0])
 	if bytes, err = common.BuildResponse(0, "success", jobList); err == nil {
 		resp.Write(bytes)
 	}
@@ -165,6 +166,7 @@ func InitApiServer() (err error) {
 	mux.Handle("/", http.StripPrefix("/", staticHandler)) //   ./webroot/index.html
 
 	if listener, err = net.Listen("tcp", ":"+strconv.Itoa(G_config.ApiPort)); err != nil {
+		fmt.Println("----err: ", err)
 		return
 	}
 
@@ -179,6 +181,7 @@ func InitApiServer() (err error) {
 	}
 
 	go httpServer.Serve(listener)
+	fmt.Println("master running...")
 
 	return
 }

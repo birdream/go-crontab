@@ -4,8 +4,9 @@ import (
 	"context"
 	"go-crontab/crontab/common"
 	"time"
-	"github.com/coreos/etcd/mvcc/mvccpb"
+
 	"go.etcd.io/etcd/clientv3"
+	"go.etcd.io/etcd/mvcc/mvccpb"
 )
 
 type JobMgr struct {
@@ -40,10 +41,10 @@ func InitJobMgr() (err error) {
 	watcher = clientv3.NewWatcher(client)
 
 	G_jobMgr = &JobMgr{
-		client: client,
-		kv: kv,
-		lease: lease,
-		watcher: watcher
+		client:  client,
+		kv:      kv,
+		lease:   lease,
+		watcher: watcher,
 	}
 
 	G_jobMgr.watchJobs()
@@ -64,7 +65,7 @@ func (jobMgr *JobMgr) watchJobs() (err error) {
 		watchResp          clientv3.WatchResponse
 		watchEvent         *clientv3.Event
 		jobName            string
-		jobEvent           *commom.JobEvent
+		// jobEvent           *commom.JobEvent
 	)
 
 	if getResp, err = jobMgr.kv.Get(context.TODO(), common.JOB_SAVE_DIR, clientv3.WithPrevKV()); err != nil {
@@ -73,7 +74,7 @@ func (jobMgr *JobMgr) watchJobs() (err error) {
 
 	for _, kvpair = range getResp.Kvs {
 		if job, err = common.UnpackJob(kvpair.Value); err == nil {
-			jobEvent = common.BuildJobEvent(common.JOB_EVENT_SAVE, job)
+			// jobEvent = common.BuildJobEvent(common.JOB_EVENT_SAVE, job)
 
 			// G_scheduler.PushJobEvent(jobEvent)
 		}
@@ -113,12 +114,12 @@ func (jobMgr *JobMgr) watchJobs() (err error) {
 
 func (jobMgr *JobMgr) watchKiller() {
 	var (
-		watchChan clientv3.WatchChan
-		watchResp clientv3.WatchResponse
+		watchChan  clientv3.WatchChan
+		watchResp  clientv3.WatchResponse
 		watchEvent *clientv3.Event
-		jobEvent *common.JobEvent
-		jobName string
-		job *common.Job
+		jobEvent   *common.JobEvent
+		jobName    string
+		job        *common.Job
 	)
 	// 监听/cron/killer目录
 	go func() { // 监听协程

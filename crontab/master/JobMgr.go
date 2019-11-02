@@ -3,12 +3,12 @@ package master
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"go-crontab/crontab/common"
 	"time"
 
-	"go.etcd.io/etcd/mvcc/mvccpb"
-
 	"go.etcd.io/etcd/clientv3"
+	"go.etcd.io/etcd/mvcc/mvccpb"
 )
 
 type JobMgr struct {
@@ -126,6 +126,7 @@ func (jobMgr *JobMgr) ListJobs() (jobList []*common.Job, err error) {
 	for _, kvPair = range getResp.Kvs {
 		job = &common.Job{}
 		if err = json.Unmarshal(kvPair.Value, job); err != nil {
+			fmt.Println("ListJobs Unmarshal error: ", err)
 			err = nil
 			continue
 		}

@@ -10,7 +10,6 @@
     <link href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 </head>
-
 <body>
     <div class="container-fluid">
         <!-- 页头 -->
@@ -303,6 +302,7 @@
                     url: '/job/list',
                     dataType: 'json',
                     success: function(resp) {
+                        console.log('-------------')
                         if (resp.errno != 0) {  // 服务端出错了
                             return
                         }
@@ -313,6 +313,7 @@
                         // 遍历任务, 填充table
                         for (var i = 0; i < jobList.length; ++i) {
                             var job = jobList[i];
+                            console.log(job)
                             var tr = $("<tr>")
                             tr.append($('<td class="job-name">').html(job.name))
                             tr.append($('<td class="job-command">').html(job.command))
@@ -333,5 +334,4 @@
     </script>
 
 </body>
-
 </html>
