@@ -40,8 +40,20 @@ func main() {
 		goto ERR
 	}
 
+	// 启动执行器
+	if err = worker.InitExecutor(); err != nil {
+		fmt.Println("InitExecutor err: ", err)
+		goto ERR
+	}
+
+	// 启动调度器
+	if err = worker.InitScheduler(); err != nil {
+		fmt.Println("InitScheduler err: ", err)
+		goto ERR
+	}
+
 	if err = worker.InitJobMgr(); err != nil {
-		fmt.Println("======err: ", err)
+		fmt.Println("InitJobMgr err: ", err)
 		goto ERR
 	}
 

@@ -40,14 +40,13 @@ func (jobMgr *JobMgr) watchJobs() (err error) {
 		if job, err = common.UnpackJob(kvpair.Value); err == nil {
 			jobEvent = common.BuildJobEvent(common.JOB_EVENT_SAVE, job)
 
-			// G_scheduler.PushJobEvent(jobEvent)
+			G_scheduler.PushJobEvent(jobEvent)
 		}
 	}
 
 	go func() {
 		watchStartRevision = getResp.Header.Revision + 1
 
-		fmt.Println("====")
 		watchChan = jobMgr.watcher.Watch(context.TODO(), common.JOB_SAVE_DIR, clientv3.WithRev(watchStartRevision), clientv3.WithPrefix())
 
 		for watchResp = range watchChan {
@@ -71,7 +70,7 @@ func (jobMgr *JobMgr) watchJobs() (err error) {
 
 				}
 
-				// G_scheduler.PushJobEvent(jobEvent)
+				G_scheduler.PushJobEvent(jobEvent)
 			}
 
 		}
@@ -104,7 +103,7 @@ func (jobMgr *JobMgr) watchKiller() {
 
 					fmt.Println("k PUT: ", jobEvent)
 					// 事件推给scheduler
-					// G_scheduler.PushJobEvent(jobEvent)
+					G_scheduler.PushJobEvent(jobEvent)
 				case mvccpb.DELETE: // killer标记过期, 被自动删除
 				}
 			}
@@ -147,4 +146,10 @@ func InitJobMgr() (err error) {
 
 	return
 
+}
+
+// CreateJobLock 创建任务执行锁
+func (jobMgr *JobMgr) CreateJobLock(jobName string) (jobLock *JobLock) {
+	jobLock = InitJobLock(jobName, jobMgr.kv, jobMgr.lease)
+	return
 }
