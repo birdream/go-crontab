@@ -40,12 +40,15 @@ func main() {
 		goto ERR
 	}
 
+	if err = worker.InitJobMgr(); err != nil {
+		fmt.Println("======err: ", err)
+		goto ERR
+	}
+
 	// 正常退出
 	for {
 		time.Sleep(1 * time.Second)
 	}
-
-	return
 
 ERR:
 	fmt.Println(err)

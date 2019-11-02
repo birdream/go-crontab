@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 )
 
+// Config ..
 type Config struct {
 	ApiPort               int      `json:apiPort`
 	ApiReadTimeout        int      `json:apiReadTimeout`

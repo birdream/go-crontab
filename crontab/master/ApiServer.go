@@ -166,7 +166,6 @@ func InitApiServer() (err error) {
 	mux.Handle("/", http.StripPrefix("/", staticHandler)) //   ./webroot/index.html
 
 	if listener, err = net.Listen("tcp", ":"+strconv.Itoa(G_config.ApiPort)); err != nil {
-		fmt.Println("----err: ", err)
 		return
 	}
 

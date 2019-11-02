@@ -107,6 +107,7 @@ func (jobMgr *JobMgr) DeleteJob(jobName string) (oldJob *common.Job, err error) 
 	return
 }
 
+// ListJobs ..
 func (jobMgr *JobMgr) ListJobs() (jobList []*common.Job, err error) {
 	var (
 		dirKey  string

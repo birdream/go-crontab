@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"fmt"
 	"go-crontab/crontab/common"
 	"time"
 
@@ -18,43 +19,6 @@ type JobMgr struct {
 
 var G_jobMgr *JobMgr
 
-func InitJobMgr() (err error) {
-	var (
-		config  clientv3.Config
-		client  *clientv3.Client
-		kv      clientv3.KV
-		lease   clientv3.Lease
-		watcher clientv3.Watcher
-	)
-
-	config = clientv3.Config{
-		Endpoints:   G_config.EtcdEndpoints,
-		DialTimeout: time.Duration(G_config.EtcdDialTimeout),
-	}
-
-	if client, err = clientv3.New(config); err != nil {
-		return
-	}
-
-	kv = clientv3.NewKV(client)
-	lease = clientv3.NewLease(client)
-	watcher = clientv3.NewWatcher(client)
-
-	G_jobMgr = &JobMgr{
-		client:  client,
-		kv:      kv,
-		lease:   lease,
-		watcher: watcher,
-	}
-
-	G_jobMgr.watchJobs()
-
-	G_jobMgr.watchKiller()
-
-	return
-
-}
-
 func (jobMgr *JobMgr) watchJobs() (err error) {
 	var (
 		getResp            *clientv3.GetResponse
@@ -65,7 +29,7 @@ func (jobMgr *JobMgr) watchJobs() (err error) {
 		watchResp          clientv3.WatchResponse
 		watchEvent         *clientv3.Event
 		jobName            string
-		// jobEvent           *commom.JobEvent
+		jobEvent           *common.JobEvent
 	)
 
 	if getResp, err = jobMgr.kv.Get(context.TODO(), common.JOB_SAVE_DIR, clientv3.WithPrevKV()); err != nil {
@@ -74,7 +38,7 @@ func (jobMgr *JobMgr) watchJobs() (err error) {
 
 	for _, kvpair = range getResp.Kvs {
 		if job, err = common.UnpackJob(kvpair.Value); err == nil {
-			// jobEvent = common.BuildJobEvent(common.JOB_EVENT_SAVE, job)
+			jobEvent = common.BuildJobEvent(common.JOB_EVENT_SAVE, job)
 
 			// G_scheduler.PushJobEvent(jobEvent)
 		}
@@ -83,7 +47,8 @@ func (jobMgr *JobMgr) watchJobs() (err error) {
 	go func() {
 		watchStartRevision = getResp.Header.Revision + 1
 
-		watchStartRevision = jobMgr.watcher.Watch(context.TODO(), common.JOB_SAVE_DIR, clientv3.WithRev(watchStartRevision), clientv3.WithPrefix())
+		fmt.Println("====")
+		watchChan = jobMgr.watcher.Watch(context.TODO(), common.JOB_SAVE_DIR, clientv3.WithRev(watchStartRevision), clientv3.WithPrefix())
 
 		for watchResp = range watchChan {
 			for _, watchEvent = range watchResp.Events {
@@ -94,14 +59,15 @@ func (jobMgr *JobMgr) watchJobs() (err error) {
 					}
 
 					jobEvent = common.BuildJobEvent(common.JOB_EVENT_SAVE, job)
+					fmt.Println("PUT: ", jobEvent)
 
 				case mvccpb.DELETE:
 					jobName = common.ExtractJobName(string(watchEvent.Kv.Key))
 
 					job = &common.Job{Name: jobName}
-
 					// 构建一个删除Event
 					jobEvent = common.BuildJobEvent(common.JOB_EVENT_DELETE, job)
+					fmt.Println("Delete: ", jobEvent)
 
 				}
 
@@ -110,6 +76,8 @@ func (jobMgr *JobMgr) watchJobs() (err error) {
 
 		}
 	}()
+
+	return
 }
 
 func (jobMgr *JobMgr) watchKiller() {
@@ -133,6 +101,8 @@ func (jobMgr *JobMgr) watchKiller() {
 					jobName = common.ExtractKillerName(string(watchEvent.Kv.Key))
 					job = &common.Job{Name: jobName}
 					jobEvent = common.BuildJobEvent(common.JOB_EVENT_KILL, job)
+
+					fmt.Println("k PUT: ", jobEvent)
 					// 事件推给scheduler
 					// G_scheduler.PushJobEvent(jobEvent)
 				case mvccpb.DELETE: // killer标记过期, 被自动删除
@@ -140,4 +110,41 @@ func (jobMgr *JobMgr) watchKiller() {
 			}
 		}
 	}()
+}
+
+func InitJobMgr() (err error) {
+	var (
+		config  clientv3.Config
+		client  *clientv3.Client
+		kv      clientv3.KV
+		lease   clientv3.Lease
+		watcher clientv3.Watcher
+	)
+
+	config = clientv3.Config{
+		Endpoints:   G_config.EtcdEndpoints,
+		DialTimeout: time.Duration(G_config.EtcdDialTimeout) * time.Millisecond,
+	}
+
+	if client, err = clientv3.New(config); err != nil {
+		return
+	}
+
+	kv = clientv3.NewKV(client)
+	lease = clientv3.NewLease(client)
+	watcher = clientv3.NewWatcher(client)
+
+	G_jobMgr = &JobMgr{
+		client:  client,
+		kv:      kv,
+		lease:   lease,
+		watcher: watcher,
+	}
+
+	G_jobMgr.watchJobs()
+
+	G_jobMgr.watchKiller()
+
+	return
+
 }

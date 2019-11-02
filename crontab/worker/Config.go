@@ -2,23 +2,25 @@ package worker
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 )
 
+// Config ..
 type Config struct {
 	EtcdEndpoints         []string `json:"etcdEndpoints"`
 	EtcdDialTimeout       int      `json:"etcdDialTimeout"`
 	MongodbUri            string   `json:"mongodbUri"`
 	MongodbConnectTimeout int      `json:"mongodbConnectTimeout"`
 	JobLogBatchSize       int      `json:"jobLogBatchSize"`
-	JobLogCommitTimeout   int      `json"jobLogCommitTimeout"`
+	JobLogCommitTimeout   int      `json:"jobLogCommitTimeout"`
 }
 
 var (
+	// G_config ..
 	G_config *Config
 )
 
+// InitConfig ..
 func InitConfig(filename string) (err error) {
 	var (
 		content []byte
@@ -34,8 +36,6 @@ func InitConfig(filename string) (err error) {
 	}
 
 	G_config = &conf
-
-	fmt.Println(G_config)
 
 	return
 }
